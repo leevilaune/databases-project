@@ -1,7 +1,5 @@
-package dev.onesnzeroes.vendor.controller;
+package dev.onesnzeroes.vendor.endpoint.order;
 
-import dev.onesnzeroes.vendor.model.Order;
-import dev.onesnzeroes.vendor.service.OrderService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -9,7 +7,6 @@ import java.util.List;
 @RestController
 
 @RequestMapping("/api/orders")
-
 public class OrderController {
 
     private final OrderService orderService;
