@@ -461,3 +461,134 @@ DELETE /productcategories/5
 | READ productcategory | GET | `/productcategories/5` |
 | UPDATE productcategory | PUT | `/productcategories/5` |
 | DELETE productcategory | DELETE | `/productcategories/5` |
+
+
+## Example classes
+
+### Entity
+```java
+package dev.onesnzeroes.vendor.endpoint.example;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "examples")
+public class Example {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "example", nullable = false)
+    private String example;
+    
+    public Example() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getExample() {
+        return this.example;
+    }
+
+    public void setExample(String example) {
+        this.example = example;
+    }
+}
+```
+
+### Repository
+```java
+package dev.onesnzeroes.vendor.endpoint.example;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ExampleRepository extends JpaRepository<Example, Integer> {
+
+}
+```
+
+### Service
+```java
+package dev.onesnzeroes.vendor.endpoint.example;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+
+public class ExampleService {
+
+    private final ExampleRepository exampleRepository;
+
+    public ExampleRepository(OrderRepository exampleRepository) {
+        this.exampleRepository = exampleRepository;
+    }
+
+    public List<Example> getAllExamples() {
+        return exampleRepository.findAll();
+    }
+
+    public Example getExampleById(Integer id) {
+        return exampleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Example not found"));
+
+    }
+
+    public Example createExample(Example example) {
+        return exampleRepository.save(example);
+    }
+
+    public void deleteExample(Integer id) {
+        exampleRepository.deleteById(id);
+    }
+}
+```
+
+### Controller
+```java
+package dev.onesnzeroes.vendor.endpoint.example;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+
+@RequestMapping("/api/examples")
+public class ExampleController {
+
+    private final ExampleService exampleService;
+
+    public ExampleController(ExampleService exampleService) {
+        this.exampleService = exampleService;
+    }
+
+    @GetMapping
+    public List<Example> getAllExamples() {
+        return this.exampleService.getAllExamples();
+    }
+
+    @GetMapping("/{id}")
+    public Order getExample(@PathVariable Integer id) {
+        return this.exampleService.getExampleById(id);
+    }
+
+    @PostMapping
+    public Example createExample(@RequestBody Example example) {
+        return this.exampleService.createExample(example);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteExample(@PathVariable Integer id) {
+        exampleService.deleteExample(id);
+    }
+}
+```

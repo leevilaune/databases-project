@@ -1,6 +1,5 @@
-package dev.onesnzeroes.vendor.repository;
+package dev.onesnzeroes.vendor.endpoint.order;
 
-import dev.onesnzeroes.vendor.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {

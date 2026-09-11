@@ -1,9 +1,10 @@
-package dev.onesnzeroes.vendor.model;
+package dev.onesnzeroes.vendor.endpoint.order;
 
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
+//TODO: DTOs so not everything is exposed via api?
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -12,6 +13,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    //TODO: Should map to customer entity when made
     @Column(name = "customer_id", nullable = false)
     private Integer customerId;
 
@@ -21,11 +23,14 @@ public class Order {
     @Column(name = "delivery_date")
     private LocalDateTime deliveryDate;
 
+    //TODO: Map to shipping address entity when exists
     @Column(name = "shipping_address_id")
     private Integer shippingAddressId;
 
     @Column(name = "status", length = 50)
     private String status;
+
+    //TODO: Should have a list of orderitem entities when made which is correctly mapped to product entity
 
     public Order() {
     }

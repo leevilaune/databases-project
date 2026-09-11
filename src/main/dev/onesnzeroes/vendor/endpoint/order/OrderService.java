@@ -1,7 +1,5 @@
-package dev.onesnzeroes.vendor.service;
+package dev.onesnzeroes.vendor.endpoint.order;
 
-import dev.onesnzeroes.vendor.model.Order;
-import dev.onesnzeroes.vendor.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
