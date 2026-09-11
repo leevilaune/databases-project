@@ -523,7 +523,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-
 public class ExampleService {
 
     private final ExampleRepository exampleRepository;
@@ -561,7 +560,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-
 @RequestMapping("/api/examples")
 public class ExampleController {
 
