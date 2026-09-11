@@ -5,6 +5,7 @@ target/
 .kotlin
 
 .mvn/*
+application.properties
 
 ### IntelliJ IDEA ###
 .idea/*
