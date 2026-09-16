@@ -20,8 +20,7 @@ public class OrderResponse {
             LocalDateTime orderDate,
             LocalDateTime deliveryDate,
             Integer shippingAddressId,
-            String status
-    ) {
+            String status) {
         this.id = id;
         this.customerId = customerId;
         this.orderDate = orderDate;

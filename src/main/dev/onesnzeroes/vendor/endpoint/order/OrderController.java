@@ -1,5 +1,6 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
+import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public Order createOrder(@RequestBody Order order) {
+    public Order createOrder(@RequestBody CreateOrderRequest order) {
         return orderService.createOrder(order);
     }
 
