@@ -1,5 +1,6 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
+import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class OrderService {
 
     }
 
-    public Order createOrder(Order order) {
+    public Order createOrder(CreateOrderRequest order) {
         return orderRepository.save(order);
     }
 
