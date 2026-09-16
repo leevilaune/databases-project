@@ -1,5 +1,8 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
+import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
+import dev.onesnzeroes.vendor.endpoint.order.dto.OrderResponse;
+import dev.onesnzeroes.vendor.endpoint.order.dto.UpdateOrderRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,9 +12,11 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderMapper orderMapper;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
+        this.orderMapper = orderMapper;
     }
 
     public List<Order> getAllOrders() {
@@ -21,11 +26,10 @@ public class OrderService {
     public Order getOrderById(Integer id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-
     }
 
-    public Order createOrder(Order order) {
-        return orderRepository.save(order);
+    public Order createOrder(CreateOrderRequest order) {
+        return orderRepository.save(orderMapper.toEntity(order));
     }
 
     public void deleteOrder(Integer id) {
