@@ -1,5 +1,6 @@
 package dev.onesnzeroes.vendor.endpoint.product;
 
+import dev.onesnzeroes.vendor.endpoint.productcategory.ProductCategory;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -25,8 +26,9 @@ public class Product {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
-    @Column(name = "category_id")
-    private Integer categoryId;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private ProductCategory category;
 
     @Column(name = "supplier_id")
     private Integer supplierId;
@@ -74,12 +76,12 @@ public class Product {
         this.stockQuantity = stockQuantity;
     }
 
-    public Integer getCategoryId() {
-        return categoryId;
+    public ProductCategory getCategory() {
+        return category;
     }
 
-    public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
+    public void setCategory(ProductCategory category) {
+        this.category = category;
     }
 
     public Integer getSupplierId() {

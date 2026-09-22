@@ -12,10 +12,10 @@ public class OrderMapper {
         OrderResponse response = new OrderResponse();
 
         response.setId(order.getId());
-        response.setCustomerId(order.getCustomerId());
+        response.setCustomer(order.getCustomer());
         response.setOrderDate(order.getOrderDate());
         response.setDeliveryDate(order.getDeliveryDate());
-        response.setShippingAddressId(order.getShippingAddressId());
+        response.setShippingAddress(order.getShippingAddress());
         response.setStatus(order.getStatus());
 
         return response;
@@ -23,16 +23,13 @@ public class OrderMapper {
 
     public Order toEntity(CreateOrderRequest request) {
         Order order = new Order();
-
-        order.setCustomerId(request.getCustomerId());
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
-        order.setShippingAddressId(request.getShippingAddressId());
         order.setStatus(request.getStatus());
-
         return order;
     }
-
+    /*
+    TODO: update to use entities, im too lazy rn
     public void updateEntity(Order order, UpdateOrderRequest request) {
         order.setCustomerId(request.getCustomerId());
         order.setOrderDate(request.getOrderDate());
@@ -40,4 +37,5 @@ public class OrderMapper {
         order.setShippingAddressId(request.getShippingAddressId());
         order.setStatus(request.getStatus());
     }
+     */
 }

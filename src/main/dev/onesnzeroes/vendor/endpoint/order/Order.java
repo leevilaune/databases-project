@@ -1,10 +1,14 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
+import dev.onesnzeroes.vendor.endpoint.customer.Customer;
+import dev.onesnzeroes.vendor.endpoint.address.CustomerAddress;
+import dev.onesnzeroes.vendor.endpoint.orderitem.OrderItem;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-//TODO: DTOs so not everything is exposed via api?
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -13,9 +17,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    //TODO: Should map to customer entity when made
-    @Column(name = "customer_id", nullable = false)
-    private Integer customerId;
+    @ManyToOne
+    @JoinColumn(name = "customer_id", nullable = false)
+    private Customer customer;
 
     @Column(name = "order_date", nullable = false)
     private LocalDateTime orderDate;
@@ -23,14 +27,15 @@ public class Order {
     @Column(name = "delivery_date")
     private LocalDateTime deliveryDate;
 
-    //TODO: Map to shipping address entity when exists
-    @Column(name = "shipping_address_id")
-    private Integer shippingAddressId;
+    @ManyToOne
+    @JoinColumn(name = "shipping_address_id")
+    private CustomerAddress shippingAddress;
 
     @Column(name = "status", length = 50)
     private String status;
 
-    //TODO: Should have a list of orderitem entities when made which is correctly mapped to product entity
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> items = new ArrayList<>();
 
     public Order() {
     }
@@ -43,12 +48,12 @@ public class Order {
         this.id = id;
     }
 
-    public Integer getCustomerId() {
-        return customerId;
+    public Customer getCustomer() {
+        return customer;
     }
 
-    public void setCustomerId(Integer customerId) {
-        this.customerId = customerId;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
     public LocalDateTime getOrderDate() {
@@ -67,12 +72,12 @@ public class Order {
         this.deliveryDate = deliveryDate;
     }
 
-    public Integer getShippingAddressId() {
-        return shippingAddressId;
+    public CustomerAddress getShippingAddress() {
+        return shippingAddress;
     }
 
-    public void setShippingAddressId(Integer shippingAddressId) {
-        this.shippingAddressId = shippingAddressId;
+    public void setShippingAddress(CustomerAddress shippingAddress) {
+        this.shippingAddress = shippingAddress;
     }
 
     public String getStatus() {
@@ -81,5 +86,13 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
     }
 }

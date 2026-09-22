@@ -1,6 +1,7 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
 import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
+import dev.onesnzeroes.vendor.endpoint.order.dto.OrderResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,17 +18,17 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> getAllOrders() {
+    public List<OrderResponse> getAllOrders() {
         return orderService.getAllOrders();
     }
 
     @GetMapping("/{id}")
-    public Order getOrder(@PathVariable Integer id) {
+    public OrderResponse getOrder(@PathVariable Integer id) {
         return orderService.getOrderById(id);
     }
 
     @PostMapping
-    public Order createOrder(@RequestBody CreateOrderRequest order) {
+    public OrderResponse createOrder(@RequestBody CreateOrderRequest order) {
         return orderService.createOrder(order);
     }
 

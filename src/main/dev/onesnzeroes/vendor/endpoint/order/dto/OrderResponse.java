@@ -1,32 +1,41 @@
 package dev.onesnzeroes.vendor.endpoint.order.dto;
 
+import dev.onesnzeroes.vendor.endpoint.address.CustomerAddress;
+import dev.onesnzeroes.vendor.endpoint.customer.Customer;
+import dev.onesnzeroes.vendor.endpoint.orderitem.OrderItem;
+import dev.onesnzeroes.vendor.endpoint.orderitem.dto.OrderItemResponse;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class OrderResponse {
 
     private Integer id;
-    private Integer customerId;
+    private Customer customer;
     private LocalDateTime orderDate;
     private LocalDateTime deliveryDate;
-    private Integer shippingAddressId;
+    private CustomerAddress shippingAddress;
     private String status;
+    private List<OrderItemResponse> orderItems;
 
     public OrderResponse() {
     }
 
     public OrderResponse(
             Integer id,
-            Integer customerId,
+            Customer customer,
             LocalDateTime orderDate,
             LocalDateTime deliveryDate,
-            Integer shippingAddressId,
-            String status) {
+            CustomerAddress shippingAddressId,
+            String status,
+            List<OrderItemResponse> orderItems) {
         this.id = id;
-        this.customerId = customerId;
+        this.customer = customer;
         this.orderDate = orderDate;
         this.deliveryDate = deliveryDate;
-        this.shippingAddressId = shippingAddressId;
+        this.shippingAddress = shippingAddressId;
         this.status = status;
+        this.orderItems = orderItems;
     }
 
     public Integer getId() {
@@ -37,12 +46,8 @@ public class OrderResponse {
         this.id = id;
     }
 
-    public Integer getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(Integer customerId) {
-        this.customerId = customerId;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
     public LocalDateTime getOrderDate() {
@@ -61,12 +66,12 @@ public class OrderResponse {
         this.deliveryDate = deliveryDate;
     }
 
-    public Integer getShippingAddressId() {
-        return shippingAddressId;
+    public CustomerAddress getShippingAddress() {
+        return shippingAddress;
     }
 
-    public void setShippingAddressId(Integer shippingAddressId) {
-        this.shippingAddressId = shippingAddressId;
+    public void setShippingAddress(CustomerAddress shippingAddress) {
+        this.shippingAddress = shippingAddress;
     }
 
     public String getStatus() {
@@ -75,5 +80,17 @@ public class OrderResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public List<OrderItemResponse> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(List<OrderItemResponse> orderItems) {
+        this.orderItems = orderItems;
     }
 }
