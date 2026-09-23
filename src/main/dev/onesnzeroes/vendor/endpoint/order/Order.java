@@ -34,7 +34,7 @@ public class Order {
     @Column(name = "status", length = 50)
     private String status;
 
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderItem> items = new ArrayList<>();
 
     public Order() {
