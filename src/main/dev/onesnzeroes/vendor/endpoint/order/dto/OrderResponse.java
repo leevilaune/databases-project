@@ -18,8 +18,7 @@ public class OrderResponse {
     private String status;
     private List<OrderItemResponse> orderItems;
 
-    public OrderResponse() {
-    }
+    public OrderResponse() {}
 
     public OrderResponse(
             Integer id,

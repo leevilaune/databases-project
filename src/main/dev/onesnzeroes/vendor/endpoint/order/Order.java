@@ -34,7 +34,7 @@ public class Order {
     @Column(name = "status", length = 50)
     private String status;
 
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<OrderItem> items = new ArrayList<>();
 
     public Order() {

@@ -1,8 +1,11 @@
 package dev.onesnzeroes.vendor.endpoint.order.dto;
 
+import dev.onesnzeroes.vendor.endpoint.orderitem.dto.CreateOrderItemRequest;
+import dev.onesnzeroes.vendor.endpoint.orderitem.dto.OrderItemResponse;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class CreateOrderRequest {
 
@@ -15,6 +18,7 @@ public class CreateOrderRequest {
     private Integer shippingAddressId;
     @NotNull
     private String status;
+    private List<CreateOrderItemRequest> orderItems;
 
     public CreateOrderRequest() {
     }
@@ -57,5 +61,13 @@ public class CreateOrderRequest {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<CreateOrderItemRequest> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(List<CreateOrderItemRequest> orderItems) {
+        this.orderItems = orderItems;
     }
 }
