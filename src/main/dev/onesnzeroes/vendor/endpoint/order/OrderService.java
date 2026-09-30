@@ -14,14 +14,24 @@ import dev.onesnzeroes.vendor.endpoint.orderitem.dto.CreateOrderItemRequest;
 import dev.onesnzeroes.vendor.endpoint.orderitem.dto.OrderItemResponse;
 import dev.onesnzeroes.vendor.endpoint.product.Product;
 import dev.onesnzeroes.vendor.endpoint.product.ProductRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.criteria.Root;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class OrderService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
@@ -108,5 +118,22 @@ public class OrderService {
 
     public void deleteOrder(Integer id) {
         orderRepository.deleteById(id);
+    }
+
+    @Transactional
+    public int cancelOldOrders(LocalDateTime cutoff) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<Order> update = cb.createCriteriaUpdate(Order.class);
+        Root<Order> order = update.from(Order.class);
+
+        update.set(order.get("status"), "CANCELLED");
+        update.where(cb.and(cb.equal(order.get("status"), "NEW"), cb.lessThan(order.get("orderDate"), cutoff)));
+
+        return entityManager.createQuery(update).executeUpdate();
+    }
+
+    @Transactional
+    public int deleteOldLogs(LocalDateTime cutoff) {
+        return orderRepository.deleteOldStatusLogs(cutoff);
     }
 }

@@ -17,6 +17,7 @@ public class ProductController {
         this.productRepository = productRepository;
     }
 
+    //Maybe change to use product_catalog to demo view?
     @GetMapping
     public List<Product> getAllProducts() {
         return productRepository.findAll();

@@ -11,7 +11,7 @@ public class SupplierAddress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "supplier_id", nullable = false)
     private Supplier supplier;
 

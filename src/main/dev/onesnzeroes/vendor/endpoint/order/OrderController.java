@@ -2,8 +2,11 @@ package dev.onesnzeroes.vendor.endpoint.order;
 
 import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
 import dev.onesnzeroes.vendor.endpoint.order.dto.OrderResponse;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -15,6 +18,16 @@ public class OrderController {
 
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
+    }
+
+    @PostMapping("/cancel-old")
+    public ResponseEntity<Integer> cancelOldOrders(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cutoff) {
+        return ResponseEntity.ok(this.orderService.cancelOldOrders(cutoff));
+    }
+
+    @DeleteMapping("/delete-logs")
+    public ResponseEntity<Integer> deleteLogs(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cutoff) {
+        return ResponseEntity.ok(this.orderService.deleteOldLogs(cutoff));
     }
 
     @GetMapping
