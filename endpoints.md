@@ -1,36 +1,90 @@
 # Endpoints
 
-## Product
+Base URL: `http://localhost:8080/api`
 
-### CREATE product
+General notes:
 
-**Endpoint**
-```http
-POST /products
-```
+- Request and response bodies are JSON with **camelCase** field names (Spring/Jackson default).
+- Date-time fields (`orderDate`, `deliveryDate`, `cutoff`) are ISO-8601 local date-times, e.g. `2026-09-11T14:30:00`.
+- `POST` endpoints that create a row return **201 Created**; everything else returns **200 OK** on success.
+- Errors:
 
-**Input**
-```json
-{
-  "name": "Wireless Keyboard",
-  "description": "Compact wireless keyboard",
-  "price": 39.90,
-  "stock_quantity": 25,
-  "category_id": 1,
-  "supplier_id": 1
-}
-```
+| Status | When |
+|---|---|
+| 400 Bad Request | Validation failed, or a referenced row (customer, address, product, category, supplier) does not exist |
+| 404 Not Found | The row in the URL (`/{id}`) does not exist |
+| 409 Conflict | The operation would break a foreign key, e.g. deleting a product that is used in orders, or a category that still has products |
 
-**Output**
+
+Testing: start the API (`mvn spring-boot:run`) and run `./test.sh` from the project root. It creates its own
+category, product and order, checks every endpoint (including the 400/404/409 error cases) and deletes the
+test rows again. See the top of `test.sh` for options (`BASE_URL`, `SHOW_RESPONSES=0`, `LIST_LIMIT`, `TEST_LIST_ORDERS=1`, ...). Responses are pretty-printed with `jq`, so it needs to be installed.
+
+---
+
+## Products
+
+A product response looks like this. `category` is the full category object (or `null`), `supplierId` is the id of the supplier.
+
 ```json
 {
   "id": 12,
   "name": "Wireless Keyboard",
   "description": "Compact wireless keyboard",
   "price": 39.90,
-  "stock_quantity": 25,
-  "category_id": 1,
-  "supplier_id": 1
+  "stockQuantity": 25,
+  "category": {
+    "id": 1,
+    "name": "Computers",
+    "description": "Computers and computer accessories"
+  },
+  "supplierId": 1
+}
+```
+
+### CREATE product
+
+**Endpoint**
+```http
+POST /api/products
+```
+
+**Input**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | string | yes | not blank |
+| `description` | string | no | |
+| `price` | number | yes | `>= 0` |
+| `stockQuantity` | integer | yes | `>= 0` |
+| `categoryId` | integer | no | must exist in `productcategories` |
+| `supplierId` | integer | no | must exist in `suppliers` |
+
+```json
+{
+  "name": "Wireless Keyboard",
+  "description": "Compact wireless keyboard",
+  "price": 39.90,
+  "stockQuantity": 25,
+  "categoryId": 1,
+  "supplierId": 1
+}
+```
+
+**Output** — `201 Created`
+```json
+{
+  "id": 12,
+  "name": "Wireless Keyboard",
+  "description": "Compact wireless keyboard",
+  "price": 39.90,
+  "stockQuantity": 25,
+  "category": {
+    "id": 1,
+    "name": "Computers",
+    "description": "Computers and computer accessories"
+  },
+  "supplierId": 1
 }
 ```
 
@@ -40,7 +94,7 @@ POST /products
 
 **Endpoint**
 ```http
-GET /products/12
+GET /api/products/12
 ```
 
 **Output**
@@ -50,19 +104,23 @@ GET /products/12
   "name": "Wireless Keyboard",
   "description": "Compact wireless keyboard",
   "price": 39.90,
-  "stock_quantity": 25,
-  "category_id": 1,
-  "supplier_id": 1
+  "stockQuantity": 25,
+  "category": {
+    "id": 1,
+    "name": "Computers",
+    "description": "Computers and computer accessories"
+  },
+  "supplierId": 1
 }
 ```
 
 ---
 
-### READ ALL product
+### READ ALL products
 
 **Endpoint**
 ```http
-GET /products
+GET /api/products
 ```
 
 **Output**
@@ -73,27 +131,26 @@ GET /products
     "name": "Laptop",
     "description": "15-inch laptop",
     "price": 899.90,
-    "stock_quantity": 10,
-    "category_id": 1,
-    "supplier_id": 1
-  },
-  {
-    "id": 2,
-    "name": "Wireless Mouse",
-    "description": "Bluetooth wireless mouse",
-    "price": 29.90,
-    "stock_quantity": 45,
-    "category_id": 1,
-    "supplier_id": 2
+    "stockQuantity": 10,
+    "category": {
+      "id": 1,
+      "name": "Computers",
+      "description": "Computers and computer accessories"
+    },
+    "supplierId": 1
   },
   {
     "id": 12,
     "name": "Wireless Keyboard",
     "description": "Compact wireless keyboard",
     "price": 39.90,
-    "stock_quantity": 25,
-    "category_id": 1,
-    "supplier_id": 1
+    "stockQuantity": 25,
+    "category": {
+      "id": 1,
+      "name": "Computers",
+      "description": "Computers and computer accessories"
+    },
+    "supplierId": 1
   }
 ]
 ```
@@ -102,9 +159,11 @@ GET /products
 
 ### UPDATE product
 
+Replaces all fields of the product (same input as CREATE).
+
 **Endpoint**
 ```http
-PUT /products/12
+PUT /api/products/12
 ```
 
 **Input**
@@ -113,9 +172,9 @@ PUT /products/12
   "name": "Wireless Mechanical Keyboard",
   "description": "Compact mechanical wireless keyboard",
   "price": 59.90,
-  "stock_quantity": 20,
-  "category_id": 1,
-  "supplier_id": 1
+  "stockQuantity": 20,
+  "categoryId": 1,
+  "supplierId": 1
 }
 ```
 
@@ -126,9 +185,13 @@ PUT /products/12
   "name": "Wireless Mechanical Keyboard",
   "description": "Compact mechanical wireless keyboard",
   "price": 59.90,
-  "stock_quantity": 20,
-  "category_id": 1,
-  "supplier_id": 1
+  "stockQuantity": 20,
+  "category": {
+    "id": 1,
+    "name": "Computers",
+    "description": "Computers and computer accessories"
+  },
+  "supplierId": 1
 }
 ```
 
@@ -136,9 +199,11 @@ PUT /products/12
 
 ### DELETE product
 
+Fails with `409 Conflict` if the product is used in any order.
+
 **Endpoint**
 ```http
-DELETE /products/12
+DELETE /api/products/12
 ```
 
 **Output**
@@ -153,57 +218,81 @@ DELETE /products/12
 
 ## Orders
 
-### CREATE order
+An order uses both the `orders` and `orderitems` tables. In responses, `customer` and `shippingAddress` are the full objects and each order item has a composite `id` (`orderId` + `productId`).
 
-The order uses both the `orders` and `orderitems` tables.
+### CREATE order
 
 **Endpoint**
 ```http
-POST /orders
+POST /api/orders
 ```
 
 **Input**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `customerId` | integer | yes | must exist in `customers` |
+| `orderDate` | date-time | yes | |
+| `deliveryDate` | date-time | no | |
+| `shippingAddressId` | integer | yes | must exist in `customeraddresses` |
+| `status` | string | yes | e.g. `NEW`, `SHIPPED`, `DELIVERED`, `CANCELLED` |
+| `orderItems` | array | no | each item: `productId`, `quantity`, `unitPrice` (all required); `productId` must exist |
+
 ```json
 {
-  "customer_id": 1,
-  "order_date": "2026-09-11",
-  "delivery_date": null,
-  "shipping_address_id": 1,
-  "status": "PENDING",
-  "items": [
+  "customerId": 1,
+  "orderDate": "2026-09-11T10:00:00",
+  "deliveryDate": null,
+  "shippingAddressId": 1,
+  "status": "NEW",
+  "orderItems": [
     {
-      "product_id": 2,
+      "productId": 2,
       "quantity": 2,
-      "unit_price": 29.90
+      "unitPrice": 29.90
     },
     {
-      "product_id": 12,
+      "productId": 12,
       "quantity": 1,
-      "unit_price": 39.90
+      "unitPrice": 39.90
     }
   ]
 }
 ```
 
-**Output**
+**Output** — `201 Created`
 ```json
 {
-  "id": 101,
-  "customer_id": 1,
-  "order_date": "2026-09-11",
-  "delivery_date": null,
-  "shipping_address_id": 1,
-  "status": "PENDING",
-  "items": [
+  "id": 200001,
+  "customer": {
+    "id": 1,
+    "firstName": "Matti",
+    "lastName": "Meikäläinen",
+    "email": "matti@example.com",
+    "phone": "+358401234567"
+  },
+  "orderDate": "2026-09-11T10:00:00",
+  "deliveryDate": null,
+  "shippingAddress": {
+    "id": 1,
+    "streetAddress": "Esimerkkikatu 1",
+    "postalCode": "00100",
+    "city": "Helsinki",
+    "country": "Finland"
+  },
+  "status": "NEW",
+  "orderItems": [
     {
-      "product_id": 2,
+      "id": { "orderId": 200001, "productId": 2 },
+      "productId": 2,
       "quantity": 2,
-      "unit_price": 29.90
+      "unitPrice": 29.90
     },
     {
-      "product_id": 12,
+      "id": { "orderId": 200001, "productId": 12 },
+      "productId": 12,
       "quantity": 1,
-      "unit_price": 39.90
+      "unitPrice": 39.90
     }
   ]
 }
@@ -213,62 +302,49 @@ POST /orders
 
 ### READ order
 
+Returns the order together with its order items.
+
 **Endpoint**
 ```http
-GET /orders/101
+GET /api/orders/200001
 ```
 
-**Output**
-```json
-{
-  "id": 101,
-  "customer_id": 1,
-  "order_date": "2026-09-11",
-  "delivery_date": null,
-  "shipping_address_id": 1,
-  "status": "PENDING",
-  "items": [
-    {
-      "product_id": 2,
-      "quantity": 2,
-      "unit_price": 29.90
-    },
-    {
-      "product_id": 12,
-      "quantity": 1,
-      "unit_price": 39.90
-    }
-  ]
-}
-```
+**Output** — same shape as the CREATE output above.
 
 ---
 
 ### READ ALL orders
 
+Returns all orders **without** their items (`orderItems` is `null`). Use `GET /api/orders/{id}` to get the items of one order.
+
 **Endpoint**
 ```http
-GET /orders
+GET /api/orders
 ```
 
 **Output**
 ```json
 [
   {
-    "id": 100,
-    "customer_id": 2,
-    "order_date": "2026-09-08",
-    "delivery_date": "2026-09-10",
-    "shipping_address_id": 2,
-    "status": "DELIVERED"
-  },
-  {
-    "id": 101,
-    "customer_id": 1,
-    "order_date": "2026-09-11",
-    "delivery_date": null,
-    "shipping_address_id": 1,
-    "status": "PENDING"
+    "id": 1,
+    "customer": {
+      "id": 51914,
+      "firstName": "...",
+      "lastName": "...",
+      "email": "...",
+      "phone": "..."
+    },
+    "orderDate": "2024-04-03T17:51:08",
+    "deliveryDate": "2024-04-06T16:16:43",
+    "shippingAddress": {
+      "id": 51914,
+      "streetAddress": "...",
+      "postalCode": "...",
+      "city": "...",
+      "country": "..."
+    },
+    "status": "CANCELLED",
+    "orderItems": null
   }
 ]
 ```
@@ -277,48 +353,94 @@ GET /orders
 
 ### UPDATE order
 
+Partial update: only the fields that are present (non-null) are changed. Order items are not changed by this endpoint.
+
 **Endpoint**
 ```http
-PUT /orders/101
+PUT /api/orders/200001
 ```
 
-**Input**
+**Input** — all fields optional
+
+| Field | Type | Notes |
+|---|---|---|
+| `customerId` | integer | must exist in `customers` |
+| `orderDate` | date-time | |
+| `deliveryDate` | date-time | |
+| `shippingAddressId` | integer | must exist in `customeraddresses` |
+| `status` | string | |
+
 ```json
 {
-  "delivery_date": "2026-09-14",
+  "deliveryDate": "2026-09-14T12:00:00",
   "status": "SHIPPED"
 }
 ```
 
-**Output**
+**Output** — the updated order (without items)
 ```json
 {
-  "id": 101,
-  "customer_id": 1,
-  "order_date": "2026-09-11",
-  "delivery_date": "2026-09-14",
-  "shipping_address_id": 1,
-  "status": "SHIPPED"
+  "id": 200001,
+  "customer": { "id": 1, "firstName": "Matti", "lastName": "Meikäläinen", "email": "matti@example.com", "phone": "+358401234567" },
+  "orderDate": "2026-09-11T10:00:00",
+  "deliveryDate": "2026-09-14T12:00:00",
+  "shippingAddress": { "id": 1, "streetAddress": "Esimerkkikatu 1", "postalCode": "00100", "city": "Helsinki", "country": "Finland" },
+  "status": "SHIPPED",
+  "orderItems": null
 }
 ```
 
-Changing the order status can also trigger the previously implemented `order_status_log` trigger.
+Changing the order status also fires the `order_status_log` trigger in the database.
 
 ---
 
 ### DELETE order
 
+Deletes the order and its order items.
+
 **Endpoint**
 ```http
-DELETE /orders/101
+DELETE /api/orders/200001
 ```
 
 **Output**
 ```json
 {
   "message": "Order deleted successfully",
-  "id": 101
+  "id": 200001
 }
+```
+
+---
+
+### Cancel old orders (Criteria API)
+
+Sets `status = 'CANCELLED'` on every order that still has status `NEW` and an `orderDate` before `cutoff`. Implemented with a JPA `CriteriaUpdate`.
+
+**Endpoint**
+```http
+POST /api/orders/cancel-old?cutoff=2024-01-01T00:00:00
+```
+
+**Output** — number of cancelled orders
+```json
+1532
+```
+
+---
+
+### Delete old status logs (JPQL)
+
+Deletes rows from `order_status_log` whose `changed_at` is before `cutoff`. Implemented with a JPQL `DELETE` query in `OrderRepository`.
+
+**Endpoint**
+```http
+DELETE /api/orders/delete-logs?cutoff=2025-01-01T00:00:00
+```
+
+**Output** — number of deleted log rows
+```json
+87
 ```
 
 ---
@@ -329,10 +451,16 @@ DELETE /orders/101
 
 **Endpoint**
 ```http
-POST /productcategories
+POST /api/productcategories
 ```
 
 **Input**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | string | yes | not blank, max 100 characters |
+| `description` | string | no | |
+
 ```json
 {
   "name": "Electronics",
@@ -340,7 +468,7 @@ POST /productcategories
 }
 ```
 
-**Output**
+**Output** — `201 Created`
 ```json
 {
   "id": 5,
@@ -351,11 +479,11 @@ POST /productcategories
 
 ---
 
-### READ ALL productcategory
+### READ ALL productcategories
 
 **Endpoint**
 ```http
-GET /productcategories
+GET /api/productcategories
 ```
 
 **Output**
@@ -365,11 +493,6 @@ GET /productcategories
     "id": 1,
     "name": "Computers",
     "description": "Computers and computer accessories"
-  },
-  {
-    "id": 2,
-    "name": "Office",
-    "description": "Office equipment and supplies"
   },
   {
     "id": 5,
@@ -385,7 +508,7 @@ GET /productcategories
 
 **Endpoint**
 ```http
-GET /productcategories/5
+GET /api/productcategories/5
 ```
 
 **Output**
@@ -401,9 +524,11 @@ GET /productcategories/5
 
 ### UPDATE productcategory
 
+Replaces all fields of the category (same input as CREATE).
+
 **Endpoint**
 ```http
-PUT /productcategories/5
+PUT /api/productcategories/5
 ```
 
 **Input**
@@ -427,9 +552,11 @@ PUT /productcategories/5
 
 ### DELETE productcategory
 
+Fails with `409 Conflict` if any product still belongs to the category.
+
 **Endpoint**
 ```http
-DELETE /productcategories/5
+DELETE /api/productcategories/5
 ```
 
 **Output**
@@ -446,24 +573,30 @@ DELETE /productcategories/5
 
 | Endpoint | Method | Example |
 |---|---|---|
-| CREATE product | POST | `/products` |
-| READ product | GET | `/products/12` |
-| READ ALL product | GET | `/products` |
-| UPDATE product | PUT | `/products/12` |
-| DELETE product | DELETE | `/products/12` |
-| CREATE order | POST | `/orders` |
-| READ order | GET | `/orders/101` |
-| READ ALL orders | GET | `/orders` |
-| UPDATE order | PUT | `/orders/101` |
-| DELETE order | DELETE | `/orders/101` |
-| CREATE productcategory | POST | `/productcategories` |
-| READ ALL productcategory | GET | `/productcategories` |
-| READ productcategory | GET | `/productcategories/5` |
-| UPDATE productcategory | PUT | `/productcategories/5` |
-| DELETE productcategory | DELETE | `/productcategories/5` |
+| CREATE product | POST | `/api/products` |
+| READ product | GET | `/api/products/12` |
+| READ ALL products | GET | `/api/products` |
+| UPDATE product | PUT | `/api/products/12` |
+| DELETE product | DELETE | `/api/products/12` |
+| CREATE order | POST | `/api/orders` |
+| READ order | GET | `/api/orders/200001` |
+| READ ALL orders | GET | `/api/orders` |
+| UPDATE order | PUT | `/api/orders/200001` |
+| DELETE order | DELETE | `/api/orders/200001` |
+| Cancel old orders | POST | `/api/orders/cancel-old?cutoff=2024-01-01T00:00:00` |
+| Delete old status logs | DELETE | `/api/orders/delete-logs?cutoff=2025-01-01T00:00:00` |
+| CREATE productcategory | POST | `/api/productcategories` |
+| READ ALL productcategories | GET | `/api/productcategories` |
+| READ productcategory | GET | `/api/productcategories/5` |
+| UPDATE productcategory | PUT | `/api/productcategories/5` |
+| DELETE productcategory | DELETE | `/api/productcategories/5` |
 
 
 ## Example classes
+
+Template for adding a new endpoint (entity → repository → service → controller).
+Request bodies should use a DTO (see `product/dto/ProductRequest.java`) and delete endpoints
+return `common.DeleteResponse`.
 
 ### Entity
 ```java
@@ -481,7 +614,7 @@ public class Example {
 
     @Column(name = "example", nullable = false)
     private String example;
-    
+
     public Example() {
     }
 
@@ -518,7 +651,9 @@ public interface ExampleRepository extends JpaRepository<Example, Integer> {
 ```java
 package dev.onesnzeroes.vendor.endpoint.example;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -527,7 +662,7 @@ public class ExampleService {
 
     private final ExampleRepository exampleRepository;
 
-    public ExampleRepository(OrderRepository exampleRepository) {
+    public ExampleService(ExampleRepository exampleRepository) {
         this.exampleRepository = exampleRepository;
     }
 
@@ -537,8 +672,7 @@ public class ExampleService {
 
     public Example getExampleById(Integer id) {
         return exampleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Example not found"));
-
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Example not found"));
     }
 
     public Example createExample(Example example) {
@@ -546,7 +680,7 @@ public class ExampleService {
     }
 
     public void deleteExample(Integer id) {
-        exampleRepository.deleteById(id);
+        exampleRepository.delete(getExampleById(id));
     }
 }
 ```
@@ -555,6 +689,8 @@ public class ExampleService {
 ```java
 package dev.onesnzeroes.vendor.endpoint.example;
 
+import dev.onesnzeroes.vendor.endpoint.common.DeleteResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -575,18 +711,20 @@ public class ExampleController {
     }
 
     @GetMapping("/{id}")
-    public Order getExample(@PathVariable Integer id) {
+    public Example getExample(@PathVariable Integer id) {
         return this.exampleService.getExampleById(id);
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public Example createExample(@RequestBody Example example) {
         return this.exampleService.createExample(example);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteExample(@PathVariable Integer id) {
+    public DeleteResponse deleteExample(@PathVariable Integer id) {
         exampleService.deleteExample(id);
+        return new DeleteResponse("Example deleted successfully", id);
     }
 }
 ```
