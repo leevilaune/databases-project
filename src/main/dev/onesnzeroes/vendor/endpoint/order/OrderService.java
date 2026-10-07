@@ -6,6 +6,7 @@ import dev.onesnzeroes.vendor.endpoint.customer.Customer;
 import dev.onesnzeroes.vendor.endpoint.customer.CustomerRepository;
 import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
 import dev.onesnzeroes.vendor.endpoint.order.dto.OrderResponse;
+import dev.onesnzeroes.vendor.endpoint.order.dto.UpdateOrderRequest;
 import dev.onesnzeroes.vendor.endpoint.orderitem.OrderItem;
 import dev.onesnzeroes.vendor.endpoint.orderitem.OrderItemId;
 import dev.onesnzeroes.vendor.endpoint.orderitem.OrderItemMapper;
@@ -20,7 +21,9 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -65,38 +68,34 @@ public class OrderService {
     }
 
     public OrderResponse getOrderById(Integer id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+        Order order = findOrder(id);
 
         OrderResponse response = orderMapper.toResponse(order);
 
         List<OrderItem> items = orderItemRepository.findById_OrderId(id);
-        List<OrderItemResponse> orderItemResponses = new ArrayList<>();
-        for(OrderItem oi : items){
-            orderItemResponses.add(this.orderItemMapper.toResponse(oi));
-        }
-        response.setOrderItems(orderItemResponses);
+        response.setOrderItems(toItemResponses(items));
 
         return response;
     }
 
+    @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
         Order order = orderMapper.toEntity(request);
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        Customer customer = findCustomer(request.getCustomerId());
 
         CustomerAddress shippingAddress = null;
 
         if (request.getShippingAddressId() != null) {
-            shippingAddress = customerAddressRepository
-                    .findById(request.getShippingAddressId())
-                    .orElseThrow(() -> new RuntimeException("Shipping address not found"));
+            shippingAddress = findShippingAddress(request.getShippingAddressId());
         }
 
-        for (CreateOrderItemRequest itemRequest : request.getOrderItems()) {
+        List<CreateOrderItemRequest> itemRequests =
+                request.getOrderItems() != null ? request.getOrderItems() : List.of();
+
+        for (CreateOrderItemRequest itemRequest : itemRequests) {
 
             Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product not found"));
 
             OrderItem item = new OrderItem();
             item.setId(new OrderItemId(order.getId(), product.getId()));
@@ -113,11 +112,33 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
+        OrderResponse response = orderMapper.toResponse(savedOrder);
+        response.setOrderItems(toItemResponses(savedOrder.getItems()));
+        return response;
+    }
+
+    @Transactional
+    public OrderResponse updateOrder(Integer id, UpdateOrderRequest request) {
+        Order order = findOrder(id);
+
+        orderMapper.updateEntity(order, request);
+
+        if (request.getCustomerId() != null) {
+            order.setCustomer(findCustomer(request.getCustomerId()));
+        }
+        if (request.getShippingAddressId() != null) {
+            order.setShippingAddress(findShippingAddress(request.getShippingAddressId()));
+        }
+
+        Order savedOrder = orderRepository.save(order);
         return orderMapper.toResponse(savedOrder);
     }
 
+    @Transactional
     public void deleteOrder(Integer id) {
-        orderRepository.deleteById(id);
+        Order order = findOrder(id);
+        orderRepository.deleteStatusLogsForOrder(id);
+        orderRepository.delete(order);
     }
 
     @Transactional
@@ -135,5 +156,28 @@ public class OrderService {
     @Transactional
     public int deleteOldLogs(LocalDateTime cutoff) {
         return orderRepository.deleteOldStatusLogs(cutoff);
+    }
+
+    private Order findOrder(Integer id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+    }
+
+    private Customer findCustomer(Integer id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer not found"));
+    }
+
+    private CustomerAddress findShippingAddress(Integer id) {
+        return customerAddressRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Shipping address not found"));
+    }
+
+    private List<OrderItemResponse> toItemResponses(List<OrderItem> items) {
+        List<OrderItemResponse> responses = new ArrayList<>();
+        for (OrderItem oi : items) {
+            responses.add(this.orderItemMapper.toResponse(oi));
+        }
+        return responses;
     }
 }

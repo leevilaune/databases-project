@@ -1,9 +1,10 @@
 package dev.onesnzeroes.vendor.endpoint.product;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import dev.onesnzeroes.vendor.endpoint.common.DeleteResponse;
+import dev.onesnzeroes.vendor.endpoint.product.dto.ProductRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -11,20 +12,37 @@ import java.util.List;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    private final ProductRepository productRepository;
+    private final ProductService productService;
 
-    public ProductController(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    public ProductController(ProductService productService) {
+        this.productService = productService;
     }
 
     //Maybe change to use product_catalog to demo view?
     @GetMapping
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
     public Product getProduct(@PathVariable Integer id) {
-        return productRepository.findById(id).orElseThrow();
+        return productService.getProductById(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Product createProduct(@Valid @RequestBody ProductRequest request) {
+        return productService.createProduct(request);
+    }
+
+    @PutMapping("/{id}")
+    public Product updateProduct(@PathVariable Integer id, @Valid @RequestBody ProductRequest request) {
+        return productService.updateProduct(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public DeleteResponse deleteProduct(@PathVariable Integer id) {
+        productService.deleteProduct(id);
+        return new DeleteResponse("Product deleted successfully", id);
     }
 }

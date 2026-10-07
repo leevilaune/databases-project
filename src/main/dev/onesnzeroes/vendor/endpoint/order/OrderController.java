@@ -1,8 +1,12 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
+import dev.onesnzeroes.vendor.endpoint.common.DeleteResponse;
 import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
 import dev.onesnzeroes.vendor.endpoint.order.dto.OrderResponse;
+import dev.onesnzeroes.vendor.endpoint.order.dto.UpdateOrderRequest;
+import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,7 +14,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-
 @RequestMapping("/api/orders")
 public class OrderController {
 
@@ -41,12 +44,19 @@ public class OrderController {
     }
 
     @PostMapping
-    public OrderResponse createOrder(@RequestBody CreateOrderRequest order) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderResponse createOrder(@Valid @RequestBody CreateOrderRequest order) {
         return orderService.createOrder(order);
     }
 
+    @PutMapping("/{id}")
+    public OrderResponse updateOrder(@PathVariable Integer id, @RequestBody UpdateOrderRequest request) {
+        return orderService.updateOrder(id, request);
+    }
+
     @DeleteMapping("/{id}")
-    public void deleteOrder(@PathVariable Integer id) {
+    public DeleteResponse deleteOrder(@PathVariable Integer id) {
         orderService.deleteOrder(id);
+        return new DeleteResponse("Order deleted successfully", id);
     }
 }

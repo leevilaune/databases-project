@@ -28,14 +28,16 @@ public class OrderMapper {
         order.setStatus(request.getStatus());
         return order;
     }
-    /*
-    TODO: update to use entities, im too lazy rn
+
     public void updateEntity(Order order, UpdateOrderRequest request) {
-        order.setCustomerId(request.getCustomerId());
-        order.setOrderDate(request.getOrderDate());
-        order.setDeliveryDate(request.getDeliveryDate());
-        order.setShippingAddressId(request.getShippingAddressId());
-        order.setStatus(request.getStatus());
+        if (request.getOrderDate() != null) {
+            order.setOrderDate(request.getOrderDate());
+        }
+        if (request.getDeliveryDate() != null) {
+            order.setDeliveryDate(request.getDeliveryDate());
+        }
+        if (request.getStatus() != null) {
+            order.setStatus(request.getStatus());
+        }
     }
-     */
 }
