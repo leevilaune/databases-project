@@ -15,8 +15,9 @@
 --
 --   mariadb asd -u root -p < db/vendor_api.sql
 --
--- The users at the end are created for the database `asd`; change the
--- name and the passwords if needed.
+-- The privileges at the end are granted on the database the script is
+-- run in (the current database), so it works with any database name.
+-- Change the passwords before running.
 -- =====================================================================
 
 
@@ -296,17 +297,19 @@ WHERE changed_at < SUBTIME(NOW(), "730 0:0:0");
 --                 plus the right to run the procedure
 --   vendor_report read-only reporting: the views, and from customers only
 --                 the names (no e-mail addresses or phone numbers)
+-- "ON *" and table names without a database name refer to the current
+-- database (the one the script is run in).
 -- =====================================================================
 
 CREATE USER 'vendor_api'@'localhost' IDENTIFIED BY 'change-me-api';
-GRANT SELECT, INSERT, UPDATE, DELETE ON asd.* TO 'vendor_api'@'localhost';
-GRANT EXECUTE ON PROCEDURE asd.cancel_order TO 'vendor_api'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON * TO 'vendor_api'@'localhost';
+GRANT EXECUTE ON PROCEDURE cancel_order TO 'vendor_api'@'localhost';
 
 CREATE USER 'vendor_report'@'localhost' IDENTIFIED BY 'change-me-report';
-GRANT SELECT ON asd.product_catalog TO 'vendor_report'@'localhost';
-GRANT SELECT ON asd.order_summary TO 'vendor_report'@'localhost';
-GRANT SELECT ON asd.product_sales TO 'vendor_report'@'localhost';
-GRANT SELECT (id, first_name, last_name) ON asd.customers TO 'vendor_report'@'localhost';
+GRANT SELECT ON product_catalog TO 'vendor_report'@'localhost';
+GRANT SELECT ON order_summary TO 'vendor_report'@'localhost';
+GRANT SELECT ON product_sales TO 'vendor_report'@'localhost';
+GRANT SELECT (id, first_name, last_name) ON customers TO 'vendor_report'@'localhost';
 
 
 -- =====================================================================
