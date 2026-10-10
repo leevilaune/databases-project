@@ -6,6 +6,7 @@ target/
 
 .mvn/*
 application.properties
+dashboard
 
 ### IntelliJ IDEA ###
 .idea/*
