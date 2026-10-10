@@ -89,7 +89,7 @@ mvn spring-boot:run          # http://localhost:8080
 `spring.jpa.hibernate.ddl-auto=none`: the schema is owned by the SQL scripts, and Hibernate must not
 alter it.
 
-### 3. Tests and dashboard
+### 3. Tests
 
 ```sh
 ./test.sh
