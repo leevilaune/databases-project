@@ -683,6 +683,7 @@ reads from the proxy without a query), and the `@JsonIgnore`d back references
 | What | How |
 |---|---|
 | Database features | The end of [`db/vendor_api.sql`](db/vendor_api.sql) has example queries: `EXPLAIN` for the indexed queries, the views, the triggers inside a transaction that is rolled back (stock reservation, cancel/restock, the status log, a rejected status change) and `CALL cancel_order`. |
+| Java tests | Run `mvn test` to compile and run the automated tests for controllers, services, order mapping, request validation, paging and error handling. These tests do not require the API server to be running. |
 | API end to end | `./test.sh` runs 94 checks covering every endpoint, the error cases (400/404/409) and the database behaviour seen through CRUD: stock 20 -> 17 -> 12 -> 17, trigger-rejected status changes, foreign-key conflicts. It creates its own supplier, category, product, customer, addresses and orders and deletes them at the end, so the sample data stays the same. Options: `SHOW_RESPONSES=0`, `LIST_LIMIT=N`, `BASE_URL` (see the top of the script). Requires `curl` and `jq`. |
 
 ---
