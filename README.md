@@ -47,7 +47,7 @@ event and security.
 
 ## Feature overview
 
-| Course topic | Where it is used |
+| Topic | Where it is used |
 |---|---|
 | **CRUD** | 33 endpoints: suppliers (+ address), products, product categories, orders (+ order items), customers (+ addresses) |
 | **Combining tables** | Products embed their category. Orders embed customer, shipping address and order items. `GET /api/orders?supplierId=` finds orders through order items -> products -> supplier. |
@@ -102,7 +102,7 @@ alter it.
 ```
 vendor-api/
 ├── README.md                       this file
-├── vendor_db.sql                   schema + sample data (course material)
+├── vendor_db.sql                   schema + sample data
 ├── db/
 │   └── vendor_api.sql              indexes, log table, views, triggers, procedure, event, users
 ├── src/main/dev/onesnzeroes/vendor/endpoint/
@@ -514,14 +514,6 @@ that the API's repeated queries use in `WHERE` (search conditions) and `ORDER BY
 | `idx_statuslog_order_changed` | `order_status_log(order_id, changed_at)` | one order's status history, `WHERE order_id = ? ORDER BY changed_at` |
 | `idx_statuslog_changed` | `order_status_log(changed_at)` | the purge event: `WHERE changed_at < ?` |
 
-Notes, following the indexing rules of thumb from the course:
-
-- Indexes help most in large tables, so none were added for the small ones (10 categories,
-  100 suppliers).
-- `status` alone has only three values, which is too little variation for a useful single-field
-  index. Together with `order_date` it's useful.
-- Indexes slow down inserts, updates and deletes, so only fields that the repeated queries actually
-  use are indexed.
 
 Check the query plan with `EXPLAIN`. The `key` column shows the index used:
 
@@ -648,8 +640,6 @@ They are removed only with their order (`ON DELETE CASCADE`) or by the purge eve
 | **No leaking internals** | Unexpected database errors return `500 "Database error"` without SQL details. Only the triggers' own messages (`SQLSTATE 45000`) are shown. |
 | **Secrets out of git** | `application.properties` is gitignored. The committed `application.properties.example` reads `DB_USER` / `DB_PASSWORD` from the environment. |
 
-Not implemented (out of scope for the course): authentication/authorization of API users (e.g.
-Spring Security + JWT), so any client can act as any vendor; TLS; rate limiting.
 
 ### Query techniques in the application
 
@@ -682,9 +672,6 @@ Associations that are not serialized stay lazy and are never loaded:
 reads from the proxy without a query), and the `@JsonIgnore`d back references
 `CustomerAddress.customer` and `SupplierAddress.supplier`.
 
-Result: listing a page of orders takes 2 queries (page + count) regardless of
-page size, instead of up to 2N+2; an order with M lines takes 2 queries instead
-of 3 + 2M.
 
 ---
 
