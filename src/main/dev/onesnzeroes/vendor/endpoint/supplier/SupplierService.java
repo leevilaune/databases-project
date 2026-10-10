@@ -62,10 +62,10 @@ public class SupplierService {
             a.setSupplier(supplier);
             return a;
         });
-        address.setStreetAddress(request.streetAddress());
-        address.setPostalCode(request.postalCode());
-        address.setCity(request.city());
-        address.setCountry(request.country());
+        address.setStreetAddress(request.getStreetAddress());
+        address.setPostalCode(request.getPostalCode());
+        address.setCity(request.getCity());
+        address.setCountry(request.getCountry());
         return addressRepository.save(address);
     }
 
@@ -74,9 +74,9 @@ public class SupplierService {
     }
 
     private static void apply(Supplier supplier, SupplierRequest request) {
-        supplier.setName(request.name().trim());
-        supplier.setContactName(request.contactName());
-        supplier.setPhone(request.phone());
-        supplier.setEmail(request.email());
+        supplier.setName(request.getName().trim());
+        supplier.setContactName(request.getContactName());
+        supplier.setPhone(request.getPhone());
+        supplier.setEmail(request.getEmail());
     }
 }

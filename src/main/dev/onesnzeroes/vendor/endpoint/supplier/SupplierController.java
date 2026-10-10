@@ -52,7 +52,6 @@ public class SupplierController {
         return supplierService.getAddress(id);
     }
 
-    // creates or replaces the supplier's (single) address
     @PutMapping("/{id}/address")
     public SupplierAddress putAddress(@PathVariable Integer id, @Valid @RequestBody AddressRequest request) {
         return supplierService.putAddress(id, request);

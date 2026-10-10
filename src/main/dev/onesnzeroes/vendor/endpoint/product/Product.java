@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 
-//same todos as i orders
 @Entity
 @Table(name = "products")
 public class Product {

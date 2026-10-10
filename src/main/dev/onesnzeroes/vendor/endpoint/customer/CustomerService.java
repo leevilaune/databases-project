@@ -85,16 +85,16 @@ public class CustomerService {
     }
 
     private static void applyAddress(CustomerAddress address, AddressRequest request) {
-        address.setStreetAddress(request.streetAddress());
-        address.setPostalCode(request.postalCode());
-        address.setCity(request.city());
-        address.setCountry(request.country());
+        address.setStreetAddress(request.getStreetAddress());
+        address.setPostalCode(request.getPostalCode());
+        address.setCity(request.getCity());
+        address.setCountry(request.getCountry());
     }
 
     private static void apply(Customer customer, CustomerRequest request) {
-        customer.setFirstName(request.firstName().trim());
-        customer.setLastName(request.lastName().trim());
-        customer.setEmail(request.email().trim());
-        customer.setPhone(request.phone());
+        customer.setFirstName(request.getFirstName().trim());
+        customer.setLastName(request.getLastName().trim());
+        customer.setEmail(request.getEmail().trim());
+        customer.setPhone(request.getPhone());
     }
 }
