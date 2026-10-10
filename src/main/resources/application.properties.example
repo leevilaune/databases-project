@@ -1,0 +1,8 @@
+spring.datasource.url=jdbc:mariadb://localhost:3306/asd
+spring.datasource.username=${DB_USER:vendor_api}
+spring.datasource.password=${DB_PASSWORD:change-me-api}
+
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.open-in-view=false
+
+spring.jpa.show-sql=false

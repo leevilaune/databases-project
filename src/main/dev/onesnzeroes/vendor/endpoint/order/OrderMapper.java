@@ -12,10 +12,10 @@ public class OrderMapper {
         OrderResponse response = new OrderResponse();
 
         response.setId(order.getId());
-        response.setCustomerId(order.getCustomerId());
+        response.setCustomer(order.getCustomer());
         response.setOrderDate(order.getOrderDate());
         response.setDeliveryDate(order.getDeliveryDate());
-        response.setShippingAddressId(order.getShippingAddressId());
+        response.setShippingAddress(order.getShippingAddress());
         response.setStatus(order.getStatus());
 
         return response;
@@ -23,21 +23,21 @@ public class OrderMapper {
 
     public Order toEntity(CreateOrderRequest request) {
         Order order = new Order();
-
-        order.setCustomerId(request.getCustomerId());
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
-        order.setShippingAddressId(request.getShippingAddressId());
-        order.setStatus(request.getStatus());
-
+        order.setStatus(request.getStatus() != null ? request.getStatus() : "NEW");
         return order;
     }
 
     public void updateEntity(Order order, UpdateOrderRequest request) {
-        order.setCustomerId(request.getCustomerId());
-        order.setOrderDate(request.getOrderDate());
-        order.setDeliveryDate(request.getDeliveryDate());
-        order.setShippingAddressId(request.getShippingAddressId());
-        order.setStatus(request.getStatus());
+        if (request.getOrderDate() != null) {
+            order.setOrderDate(request.getOrderDate());
+        }
+        if (request.getDeliveryDate() != null) {
+            order.setDeliveryDate(request.getDeliveryDate());
+        }
+        if (request.getStatus() != null) {
+            order.setStatus(request.getStatus());
+        }
     }
 }

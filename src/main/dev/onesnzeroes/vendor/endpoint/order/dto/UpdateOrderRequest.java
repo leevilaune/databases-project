@@ -1,5 +1,7 @@
 package dev.onesnzeroes.vendor.endpoint.order.dto;
 
+import jakarta.validation.constraints.Pattern;
+
 import java.time.LocalDateTime;
 
 public class UpdateOrderRequest {
@@ -8,6 +10,7 @@ public class UpdateOrderRequest {
     private LocalDateTime orderDate;
     private LocalDateTime deliveryDate;
     private Integer shippingAddressId;
+    @Pattern(regexp = "NEW|SHIPPED|CANCELLED", message = "must be NEW, SHIPPED or CANCELLED")
     private String status;
 
     public UpdateOrderRequest() {
