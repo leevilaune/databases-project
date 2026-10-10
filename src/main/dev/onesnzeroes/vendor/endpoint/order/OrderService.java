@@ -2,6 +2,7 @@ package dev.onesnzeroes.vendor.endpoint.order;
 
 import dev.onesnzeroes.vendor.endpoint.address.CustomerAddress;
 import dev.onesnzeroes.vendor.endpoint.address.CustomerAddressRepository;
+import dev.onesnzeroes.vendor.endpoint.common.PageResponse;
 import dev.onesnzeroes.vendor.endpoint.customer.Customer;
 import dev.onesnzeroes.vendor.endpoint.customer.CustomerRepository;
 import dev.onesnzeroes.vendor.endpoint.order.dto.CreateOrderRequest;
@@ -15,26 +16,25 @@ import dev.onesnzeroes.vendor.endpoint.orderitem.dto.CreateOrderItemRequest;
 import dev.onesnzeroes.vendor.endpoint.orderitem.dto.OrderItemResponse;
 import dev.onesnzeroes.vendor.endpoint.product.Product;
 import dev.onesnzeroes.vendor.endpoint.product.ProductRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaUpdate;
-import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
@@ -60,11 +60,13 @@ public class OrderService {
         this.productRepository = productRepository;
     }
 
-    public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll()
-                .stream()
-                .map(orderMapper::toResponse)
-                .toList();
+    public PageResponse<OrderResponse> getOrders(String status, Integer customerId, Integer supplierId,
+                                                 int page, int size) {
+        PageRequest pageable = PageRequest.of(PageResponse.page(page), PageResponse.size(size),
+                Sort.by(Sort.Order.desc("orderDate"), Sort.Order.desc("id")));
+        String statusFilter = status == null || status.isBlank() ? null : status;
+        Page<Order> orders = orderRepository.search(statusFilter, customerId, supplierId, pageable);
+        return PageResponse.of(orders.map(orderMapper::toResponse));
     }
 
     public OrderResponse getOrderById(Integer id) {
@@ -80,37 +82,57 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
-        Order order = orderMapper.toEntity(request);
         Customer customer = findCustomer(request.getCustomerId());
-
         CustomerAddress shippingAddress = null;
-
         if (request.getShippingAddressId() != null) {
             shippingAddress = findShippingAddress(request.getShippingAddressId());
+            if (!shippingAddress.getCustomer().getId().equals(customer.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Shipping address " + shippingAddress.getId() + " does not belong to customer " + customer.getId());
+            }
         }
 
-        List<CreateOrderItemRequest> itemRequests =
-                request.getOrderItems() != null ? request.getOrderItems() : List.of();
-
-        for (CreateOrderItemRequest itemRequest : itemRequests) {
-
-            Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product not found"));
-
-            OrderItem item = new OrderItem();
-            item.setId(new OrderItemId(order.getId(), product.getId()));
-            item.setProduct(product);
-            item.setQuantity(itemRequest.getQuantity());
-            item.setUnitPrice(BigDecimal.valueOf(itemRequest.getUnitPrice()));
-
-            item.setOrder(order);
-
-            order.getItems().add(item);
+        List<CreateOrderItemRequest> itemRequests = request.getOrderItems();
+        Set<Integer> productIds = new HashSet<>();
+        for (CreateOrderItemRequest item : itemRequests) {
+            if (!productIds.add(item.getProductId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Product " + item.getProductId() + " appears more than once; combine the quantities");
+            }
         }
+
+        Map<Integer, Product> products = productRepository.findAllByIdForUpdate(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        Order order = orderMapper.toEntity(request);
+        checkDeliveryDate(order);
         order.setCustomer(customer);
         order.setShippingAddress(shippingAddress);
 
-        Order savedOrder = orderRepository.save(order);
+        for (CreateOrderItemRequest itemRequest : itemRequests) {
+            Product product = products.get(itemRequest.getProductId());
+            if (product == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Product " + itemRequest.getProductId() + " not found");
+            }
+            if (!"CANCELLED".equals(order.getStatus()) && product.getStockQuantity() < itemRequest.getQuantity()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Insufficient stock for product " + product.getId() + ": "
+                                + product.getStockQuantity() + " available, " + itemRequest.getQuantity() + " requested");
+            }
+
+            OrderItem item = new OrderItem();
+            item.setId(new OrderItemId(null, product.getId()));
+            item.setProduct(product);
+            item.setQuantity(itemRequest.getQuantity());
+            item.setUnitPrice(itemRequest.getUnitPrice() != null
+                    ? BigDecimal.valueOf(itemRequest.getUnitPrice())
+                    : product.getPrice());
+            item.setOrder(order);
+            order.getItems().add(item);
+        }
+
+        Order savedOrder = orderRepository.saveAndFlush(order);
 
         OrderResponse response = orderMapper.toResponse(savedOrder);
         response.setOrderItems(toItemResponses(savedOrder.getItems()));
@@ -122,6 +144,7 @@ public class OrderService {
         Order order = findOrder(id);
 
         orderMapper.updateEntity(order, request);
+        checkDeliveryDate(order);
 
         if (request.getCustomerId() != null) {
             order.setCustomer(findCustomer(request.getCustomerId()));
@@ -130,7 +153,7 @@ public class OrderService {
             order.setShippingAddress(findShippingAddress(request.getShippingAddressId()));
         }
 
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder = orderRepository.saveAndFlush(order);
         return orderMapper.toResponse(savedOrder);
     }
 
@@ -141,21 +164,12 @@ public class OrderService {
         orderRepository.delete(order);
     }
 
-    @Transactional
-    public int cancelOldOrders(LocalDateTime cutoff) {
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaUpdate<Order> update = cb.createCriteriaUpdate(Order.class);
-        Root<Order> order = update.from(Order.class);
-
-        update.set(order.get("status"), "CANCELLED");
-        update.where(cb.and(cb.equal(order.get("status"), "NEW"), cb.lessThan(order.get("orderDate"), cutoff)));
-
-        return entityManager.createQuery(update).executeUpdate();
-    }
-
-    @Transactional
-    public int deleteOldLogs(LocalDateTime cutoff) {
-        return orderRepository.deleteOldStatusLogs(cutoff);
+    private static void checkDeliveryDate(Order order) {
+        if (order.getDeliveryDate() != null && order.getOrderDate() != null
+                && order.getDeliveryDate().isBefore(order.getOrderDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "deliveryDate: must not be before orderDate");
+        }
     }
 
     private Order findOrder(Integer id) {

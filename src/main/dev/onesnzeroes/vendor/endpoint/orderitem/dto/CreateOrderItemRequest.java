@@ -1,6 +1,8 @@
 package dev.onesnzeroes.vendor.endpoint.orderitem.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 
@@ -9,8 +11,9 @@ public class CreateOrderItemRequest {
     @NotNull
     private Integer productId;
     @NotNull
+    @Positive
     private Integer quantity;
-    @NotNull
+    @PositiveOrZero
     private Double unitPrice;
 
     public CreateOrderItemRequest(){}

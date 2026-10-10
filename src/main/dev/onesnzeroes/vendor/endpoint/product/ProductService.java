@@ -26,8 +26,17 @@ public class ProductService {
         this.supplierRepository = supplierRepository;
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<Product> getProducts(Integer supplierId, Integer categoryId) {
+        if (supplierId != null && categoryId != null) {
+            return productRepository.findBySupplierIdAndCategoryIdOrderByNameAsc(supplierId, categoryId);
+        }
+        if (supplierId != null) {
+            return productRepository.findBySupplierIdOrderByNameAsc(supplierId);
+        }
+        if (categoryId != null) {
+            return productRepository.findByCategoryIdOrderByNameAsc(categoryId);
+        }
+        return productRepository.findAllByOrderByNameAsc();
     }
 
     public Product getProductById(Integer id) {

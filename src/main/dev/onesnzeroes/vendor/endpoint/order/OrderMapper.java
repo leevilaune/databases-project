@@ -25,7 +25,7 @@ public class OrderMapper {
         Order order = new Order();
         order.setOrderDate(request.getOrderDate());
         order.setDeliveryDate(request.getDeliveryDate());
-        order.setStatus(request.getStatus());
+        order.setStatus(request.getStatus() != null ? request.getStatus() : "NEW");
         return order;
     }
 

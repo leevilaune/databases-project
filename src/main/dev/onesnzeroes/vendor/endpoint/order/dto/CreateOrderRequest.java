@@ -1,8 +1,10 @@
 package dev.onesnzeroes.vendor.endpoint.order.dto;
 
 import dev.onesnzeroes.vendor.endpoint.orderitem.dto.CreateOrderItemRequest;
-import dev.onesnzeroes.vendor.endpoint.orderitem.dto.OrderItemResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,9 +18,10 @@ public class CreateOrderRequest {
     private LocalDateTime deliveryDate;
     @NotNull
     private Integer shippingAddressId;
-    @NotNull
+    @Pattern(regexp = "NEW|SHIPPED|CANCELLED", message = "must be NEW, SHIPPED or CANCELLED")
     private String status;
-    private List<CreateOrderItemRequest> orderItems;
+    @NotEmpty
+    private List<@Valid CreateOrderItemRequest> orderItems;
 
     public CreateOrderRequest() {
     }

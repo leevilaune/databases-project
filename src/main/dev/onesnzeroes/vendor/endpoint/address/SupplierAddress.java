@@ -1,5 +1,6 @@
 package dev.onesnzeroes.vendor.endpoint.address;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.onesnzeroes.vendor.endpoint.supplier.Supplier;
 import jakarta.persistence.*;
 
@@ -11,6 +12,7 @@ public class SupplierAddress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @JsonIgnore
     @OneToOne
     @JoinColumn(name = "supplier_id", nullable = false)
     private Supplier supplier;

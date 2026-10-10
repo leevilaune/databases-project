@@ -18,10 +18,10 @@ public class ProductController {
         this.productService = productService;
     }
 
-    //Maybe change to use product_catalog to demo view?
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts();
+    public List<Product> getProducts(@RequestParam(required = false) Integer supplierId,
+                                     @RequestParam(required = false) Integer categoryId) {
+        return productService.getProducts(supplierId, categoryId);
     }
 
     @GetMapping("/{id}")

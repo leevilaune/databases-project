@@ -1,20 +1,34 @@
 package dev.onesnzeroes.vendor.endpoint.order;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
-
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
-    @Modifying
-    @Query("""
-        DELETE FROM OrderStatusLog l
-        WHERE l.changedAt < :cutoff
-    """)
-    int deleteOldStatusLogs(@Param("cutoff") LocalDateTime cutoff);
+    @Query(value = """
+            SELECT o FROM Order o
+            WHERE (:status IS NULL OR o.status = :status)
+              AND (:customerId IS NULL OR o.customer.id = :customerId)
+              AND (:supplierId IS NULL OR EXISTS (
+                    SELECT 1 FROM OrderItem i
+                    WHERE i.order = o AND i.product.supplierId = :supplierId))
+            """,
+            countQuery = """
+            SELECT COUNT(o) FROM Order o
+            WHERE (:status IS NULL OR o.status = :status)
+              AND (:customerId IS NULL OR o.customer.id = :customerId)
+              AND (:supplierId IS NULL OR EXISTS (
+                    SELECT 1 FROM OrderItem i
+                    WHERE i.order = o AND i.product.supplierId = :supplierId))
+            """)
+    Page<Order> search(@Param("status") String status,
+                       @Param("customerId") Integer customerId,
+                       @Param("supplierId") Integer supplierId,
+                       Pageable pageable);
 
     @Modifying
     @Query("""
