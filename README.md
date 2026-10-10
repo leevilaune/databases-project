@@ -39,6 +39,7 @@ event and security.
    - [Scheduled event](#scheduled-event)
    - [Security](#security)
    - [Query techniques in the application](#query-techniques-in-the-application)
+   - [Avoiding the N+1 query problem](#avoiding-the-n1-query-problem)
 6. [Testing](#testing)
 7. [Known limitations](#known-limitations)
 
@@ -659,6 +660,31 @@ Spring Security + JWT), so any client can act as any vendor; TLS; rate limiting.
 | Pessimistic locking | `ProductRepository.findAllByIdForUpdate` (`@Lock(PESSIMISTIC_WRITE)` -> `SELECT … FOR UPDATE`) |
 | Paging and sorting | `PageRequest` + `Sort` (orders newest first, customers by id) |
 | Cascades | `Order.items` with `CascadeType.ALL`: order lines are saved and deleted with their order |
+
+### Avoiding the N+1 query problem
+
+All `@ManyToOne` / `@OneToOne` associations are mapped with `fetch = FetchType.LAZY`
+(JPA's default for these is EAGER, which made Hibernate run one extra SELECT per
+related row, e.g. one per customer when listing orders).
+
+Because `spring.jpa.open-in-view=false`, the JSON is written after the
+persistence context is closed, so every association that ends up in a response
+is loaded by the query itself with `@EntityGraph` (a LEFT JOIN in the same SELECT):
+
+| Repository method | Fetched with the row |
+|---|---|
+| `OrderRepository.search` (GET /api/orders) | `customer`, `shippingAddress` |
+| `OrderRepository.findById` (GET/PUT /api/orders/{id}) | `customer`, `shippingAddress` |
+| `ProductRepository.findById` and the list finders | `category` |
+
+Associations that are not serialized stay lazy and are never loaded:
+`OrderItem.product` (the response only uses the product id, which Hibernate
+reads from the proxy without a query), and the `@JsonIgnore`d back references
+`CustomerAddress.customer` and `SupplierAddress.supplier`.
+
+Result: listing a page of orders takes 2 queries (page + count) regardless of
+page size, instead of up to 2N+2; an order with M lines takes 2 queries instead
+of 3 + 2M.
 
 ---
 
