@@ -1,5 +1,48 @@
 # Endpoints
 
+## Product categories and 1:M relation
+
+Yksi `ProductCategory` voi sisältää monta `Product`-tuotetta. Kategoria on
+suhteen pääentiteetti ja `Product.category` on suhteen omistava puoli.
+
+### CREATE category with products
+
+```http
+POST /api/products/categories
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Electronics",
+  "description": "Electronic products",
+  "products": [
+    {
+      "name": "Keyboard",
+      "price": 39.90,
+      "stockQuantity": 10
+    }
+  ]
+}
+```
+
+Controller asettaa jokaisen tuotteen `category`-viitteen ja kutsuu
+`categoryRepository.save(category)`-metodia. `CascadeType.ALL` tallentaa myös
+tuotteet. Kategorian poisto endpointilla `DELETE /api/products/categories/{id}`
+poistaa ensin siihen liittyvät tuotteet `orphanRemoval = true` -asetuksen
+ansiosta. Tuotteita ei poisteta kategorian mukana: DELETE-operaatio irrottaa
+tuotteet kategoriasta ja poistaa vain kategorian.
+
+### READ category products
+
+```http
+GET /api/products/categories/{id}
+```
+
+`products`-kokoelma on LAZY. Se haetaan, kun koodissa kutsutaan
+`category.getProducts()` aktiivisen transaktion aikana. Näin kategorioiden
+listaus ei lataa kaikkia tuotteita automaattisesti.
+
 ## Product
 
 ### CREATE product

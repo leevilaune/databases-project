@@ -1,9 +1,7 @@
 package dev.onesnzeroes.vendor.endpoint.product;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -12,9 +10,11 @@ import java.util.List;
 public class ProductController {
 
     private final ProductRepository productRepository;
+    private final ProductCategoryRepository categoryRepository;
 
-    public ProductController(ProductRepository productRepository) {
+    public ProductController(ProductRepository productRepository, ProductCategoryRepository categoryRepository) {
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @GetMapping
@@ -25,5 +25,25 @@ public class ProductController {
     @GetMapping("/{id}")
     public Product getProduct(@PathVariable Integer id) {
         return productRepository.findById(id).orElseThrow();
+    }
+
+    @PostMapping("/categories")
+    public ProductCategory createCategory(@RequestBody ProductCategory category) {
+        category.getProducts().forEach(product -> product.setCategory(category));
+        return categoryRepository.save(category);
+    }
+
+    @GetMapping("/categories/{id}")
+    public ProductCategory getCategory(@PathVariable Integer id) {
+        return categoryRepository.findById(id).orElseThrow();
+    }
+
+    @DeleteMapping("/categories/{id}")
+    @Transactional
+    public void deleteCategory(@PathVariable Integer id) {
+        ProductCategory category = categoryRepository.findById(id).orElseThrow();
+        category.getProducts().forEach(product -> product.setCategory(null));
+        productRepository.saveAll(category.getProducts());
+        categoryRepository.delete(category);
     }
 }

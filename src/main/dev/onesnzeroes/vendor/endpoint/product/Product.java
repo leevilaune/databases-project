@@ -1,6 +1,7 @@
 package dev.onesnzeroes.vendor.endpoint.product;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 
@@ -25,8 +26,8 @@ public class Product {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
-    @Column(name = "category_id")
-    private Integer categoryId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private ProductCategory category;
 
     @Column(name = "supplier_id")
     private Integer supplierId;
@@ -75,11 +76,25 @@ public class Product {
     }
 
     public Integer getCategoryId() {
-        return categoryId;
+        return category == null ? null : category.getId();
     }
 
     public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
+        if (categoryId == null) {
+            this.category = null;
+            return;
+        }
+        ProductCategory categoryReference = new ProductCategory();
+        categoryReference.setId(categoryId);
+        this.category = categoryReference;
+    }
+
+    public ProductCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(ProductCategory category) {
+        this.category = category;
     }
 
     public Integer getSupplierId() {
