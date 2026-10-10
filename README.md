@@ -12,8 +12,7 @@ status change with its time, and foreign keys reject invalid references. The
 API: indexes, views, triggers, transactions, the status history, the stored procedure, the scheduled
 event and security.
 
-**Stack:** Java 21, Spring Boot 3.5 (Web, Data JPA / Hibernate, Validation), MariaDB 11.x,
-React + Vite (vendor dashboard), bash + curl + jq (tests).
+**Stack:** Java 21, Spring Boot 3.5 (Web, Data JPA / Hibernate, Validation), MariaDB 11.x, bash + curl + jq (tests).
 
 ---
 
@@ -40,9 +39,8 @@ React + Vite (vendor dashboard), bash + curl + jq (tests).
    - [Scheduled event](#scheduled-event)
    - [Security](#security)
    - [Query techniques in the application](#query-techniques-in-the-application)
-6. [Vendor dashboard](#vendor-dashboard)
-7. [Testing](#testing)
-8. [Known limitations](#known-limitations)
+6. [Testing](#testing)
+7. [Known limitations](#known-limitations)
 
 ---
 
@@ -51,7 +49,7 @@ React + Vite (vendor dashboard), bash + curl + jq (tests).
 | Course topic | Where it is used |
 |---|---|
 | **CRUD** | 33 endpoints: suppliers (+ address), products, product categories, orders (+ order items), customers (+ addresses) |
-| **Combining tables** | Products embed their category. Orders embed customer, shipping address and order items. `GET /api/orders?supplierId=` finds orders through order items → products → supplier. |
+| **Combining tables** | Products embed their category. Orders embed customer, shipping address and order items. `GET /api/orders?supplierId=` finds orders through order items -> products -> supplier. |
 | **Triggers** | 6 triggers fire behind the order CRUD: stock check, reservation and release, restock on cancel, allowed status transitions, status log ([details](#triggers)) |
 | **Indexes** | 7 indexes, each added for a specific API query, with `EXPLAIN` checks ([details](#indexes)) |
 | **Transactions** | `POST /api/orders` is one transaction with `SELECT … FOR UPDATE` row locks. The `cancel_order` stored procedure uses `START TRANSACTION … SELECT … FOR UPDATE … COMMIT` ([details](#transactions-and-locking)) |
@@ -124,7 +122,7 @@ vendor-api/
 └── dashboard/                      React + Vite vendor dashboard
 ```
 
-Each resource has the same layers: **controller** (HTTP) → **service** (rules, transactions) →
+Each resource has the same layers: **controller** (HTTP) -> **service** (rules, transactions) ->
 **repository** (Spring Data JPA). Request bodies are DTOs with Bean Validation annotations, never
 entities.
 
@@ -349,7 +347,7 @@ An order combines four tables: `orders`, `customers`, `customeraddresses` and `o
 `orderItems` is included by `GET /api/orders/{id}` and `POST /api/orders`, and is `null` in lists and
 in the `PUT` response.
 
-**Statuses:** `NEW` → `SHIPPED` or `NEW` → `CANCELLED`. Both are final. A database trigger rejects
+**Statuses:** `NEW` -> `SHIPPED` or `NEW` -> `CANCELLED`. Both are final. A database trigger rejects
 any other change with `409`.
 
 #### `GET /api/orders`
@@ -412,7 +410,7 @@ Partial update: only the fields that are present are changed.
 |---|---|
 | `customerId`, `shippingAddressId` | must exist |
 | `orderDate`, `deliveryDate` | date-times, `deliveryDate` not before `orderDate` (else `400`) |
-| `status` | `NEW`, `SHIPPED`, `CANCELLED`, but only `NEW → SHIPPED / CANCELLED` is accepted (else `409`) |
+| `status` | `NEW`, `SHIPPED`, `CANCELLED`, but only `NEW -> SHIPPED / CANCELLED` is accepted (else `409`) |
 
 ```json
 { "deliveryDate": "2026-09-14T12:00:00", "status": "SHIPPED" }
@@ -479,7 +477,7 @@ reporting (views, the stored procedure, the event).
 | Feature | Used through the API | Used directly in the database |
 |---|---|---|
 | Indexes | ✔ list filters, sorting, lookups | ✔ |
-| Foreign keys | ✔ → `409` | ✔ |
+| Foreign keys | ✔ -> `409` | ✔ |
 | Triggers | ✔ order create / update / delete | ✔ any client |
 | Transaction + row locks | ✔ `POST /api/orders` | ✔ `cancel_order` procedure |
 | Status history (log table) | ✔ written on every status change | ✔ queried with SQL |
@@ -543,8 +541,8 @@ The business rules hold no matter who writes to the database: the API, HeidiSQL 
 
 | Trigger | When | What it does |
 |---|---|---|
-| `trigger_order_status_change` | `AFTER UPDATE ON orders` | Writes every status change (old → new) with `NOW()` to `order_status_log` |
-| `trigger_order_status_transition` | `BEFORE UPDATE ON orders` | Only allows `NEW → SHIPPED` and `NEW → CANCELLED`. Anything else is rejected with `SIGNAL SQLSTATE '45000'`. |
+| `trigger_order_status_change` | `AFTER UPDATE ON orders` | Writes every status change (old -> new) with `NOW()` to `order_status_log` |
+| `trigger_order_status_transition` | `BEFORE UPDATE ON orders` | Only allows `NEW -> SHIPPED` and `NEW -> CANCELLED`. Anything else is rejected with `SIGNAL SQLSTATE '45000'`. |
 | `trigger_orderitem_check_stock` | `BEFORE INSERT ON orderitems` | Rejects an order line larger than the product's stock (`SIGNAL`) |
 | `trigger_orderitem_reserve_stock` | `AFTER INSERT ON orderitems` | Reduces the product's stock by the line's quantity |
 | `trigger_orderitem_release_stock` | `AFTER DELETE ON orderitems` | Returns the stock when a line of a `NEW` order is deleted. Shipped goods have left the warehouse, and cancelled orders were already restocked. |
@@ -555,9 +553,9 @@ trigger's message as the `detail`.
 
 How it looks through the CRUD API (`test.sh` checks every step):
 
-1. `POST /api/orders` with 3 units: the product's stock goes 20 → 17 (reserve trigger).
+1. `POST /api/orders` with 3 units: the product's stock goes 20 -> 17 (reserve trigger).
 2. `PUT /api/orders/{id}` with `{"status":"CANCELLED"}`: stock goes back to 20 (restock trigger),
-   and a `NEW → CANCELLED` row lands in `order_status_log` (log trigger).
+   and a `NEW -> CANCELLED` row lands in `order_status_log` (log trigger).
 3. `PUT /api/orders/{id}` with `{"status":"SHIPPED"}` on the cancelled order: `409`
    (transition trigger).
 
@@ -651,7 +649,7 @@ They are removed only with their order (`ON DELETE CASCADE`) or by the purge eve
 | **Smallest necessary privileges** | `vendor_api` (the API) gets only `SELECT, INSERT, UPDATE, DELETE` on the database and `EXECUTE` on `cancel_order`. It has no right to change the structure, so even a bug or an injection could not drop tables. Schema changes are made with the `db/` script by an admin account (hence `ddl-auto=none`). |
 | **Views and field-level rights** | `vendor_report` (read-only reporting) can `SELECT` the three views, and from `customers` only the fields `id, first_name, last_name`. It never sees customer e-mail addresses or phone numbers. |
 | **No SQL injection** | All queries go through Spring Data JPA with bound parameters (derived queries, JPQL with `:named` parameters). No SQL text is built from user input. |
-| **Input validation** | Every request body is a DTO with Bean Validation (`@NotBlank`, `@Email`, `@Positive`, `@Pattern` for statuses, `@Size` matching the column lengths) → `400`. Page sizes are capped at 100. |
+| **Input validation** | Every request body is a DTO with Bean Validation (`@NotBlank`, `@Email`, `@Positive`, `@Pattern` for statuses, `@Size` matching the column lengths) -> `400`. Page sizes are capped at 100. |
 | **Integrity in the database** | Foreign keys and triggers enforce the rules for every client, not only the API. |
 | **No leaking internals** | Unexpected database errors return `500 "Database error"` without SQL details. Only the triggers' own messages (`SQLSTATE 45000`) are shown. |
 | **Secrets out of git** | `application.properties` is gitignored. The committed `application.properties.example` reads `DB_USER` / `DB_PASSWORD` from the environment. |
@@ -664,28 +662,10 @@ Spring Security + JWT), so any client can act as any vendor; TLS; rate limiting.
 | Technique | Where |
 |---|---|
 | Spring Data derived queries | `findBySupplierIdOrderByNameAsc`, `findByCategoryIdOrderByNameAsc`, `findByEmail(email, Pageable)`, `findByCustomerIdOrderByIdAsc`, `findBySupplierId`, `findById_OrderId` |
-| JPQL | `OrderRepository.search`: optional filters and an `EXISTS` subquery over order items → products for `supplierId`, with a separate count query for paging. `deleteStatusLogsForOrder`: bulk `DELETE`. |
-| Pessimistic locking | `ProductRepository.findAllByIdForUpdate` (`@Lock(PESSIMISTIC_WRITE)` → `SELECT … FOR UPDATE`) |
+| JPQL | `OrderRepository.search`: optional filters and an `EXISTS` subquery over order items -> products for `supplierId`, with a separate count query for paging. `deleteStatusLogsForOrder`: bulk `DELETE`. |
+| Pessimistic locking | `ProductRepository.findAllByIdForUpdate` (`@Lock(PESSIMISTIC_WRITE)` -> `SELECT … FOR UPDATE`) |
 | Paging and sorting | `PageRequest` + `Sort` (orders newest first, customers by id) |
 | Cascades | `Order.items` with `CascadeType.ALL`: order lines are saved and deleted with their order |
-
----
-
-## Vendor dashboard
-
-[`dashboard/`](dashboard/README.md) is a React + Vite app built on the CRUD endpoints. A vendor picks
-itself and can:
-
-- edit its profile and address, create a new vendor, or delete one;
-- see stock figures (products, units, stock value, low stock), computed from its product list;
-- add, edit, restock (+10) and delete its products;
-- browse the orders that contain its products, filter them by status, expand an order to see its
-  lines, and ship or cancel `NEW` orders (cancel restocks through the trigger);
-- manage the product categories.
-
-```sh
-cd dashboard && npm install && npm run dev   # http://localhost:5173, proxies /api to :8080
-```
 
 ---
 
@@ -694,7 +674,7 @@ cd dashboard && npm install && npm run dev   # http://localhost:5173, proxies /a
 | What | How |
 |---|---|
 | Database features | The end of [`db/vendor_api.sql`](db/vendor_api.sql) has example queries: `EXPLAIN` for the indexed queries, the views, the triggers inside a transaction that is rolled back (stock reservation, cancel/restock, the status log, a rejected status change) and `CALL cancel_order`. |
-| API end to end | `./test.sh` runs 94 checks covering every endpoint, the error cases (400/404/409) and the database behaviour seen through CRUD: stock 20 → 17 → 12 → 17, trigger-rejected status changes, foreign-key conflicts. It creates its own supplier, category, product, customer, addresses and orders and deletes them at the end, so the sample data stays the same. Options: `SHOW_RESPONSES=0`, `LIST_LIMIT=N`, `BASE_URL` (see the top of the script). Requires `curl` and `jq`. |
+| API end to end | `./test.sh` runs 94 checks covering every endpoint, the error cases (400/404/409) and the database behaviour seen through CRUD: stock 20 -> 17 -> 12 -> 17, trigger-rejected status changes, foreign-key conflicts. It creates its own supplier, category, product, customer, addresses and orders and deletes them at the end, so the sample data stays the same. Options: `SHOW_RESPONSES=0`, `LIST_LIMIT=N`, `BASE_URL` (see the top of the script). Requires `curl` and `jq`. |
 
 ---
 
