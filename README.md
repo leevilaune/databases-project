@@ -65,15 +65,11 @@ event and security.
 ### 1. Database
 
 ```sh
-# a fresh database with the course data (≈100 MB)
 mariadb -u root -p -e "DROP DATABASE IF EXISTS asd; CREATE DATABASE asd;"
 mariadb asd -u root -p < vendor_db.sql
 
-# the database features: indexes, log table, views, triggers, procedure, event, users
-# (edit the passwords at the end of the script first)
 mariadb asd -u root -p < db/vendor_api.sql
 
-# the scheduled event needs the event scheduler
 mariadb -u root -p -e "SET GLOBAL event_scheduler = ON"
 ```
 
@@ -84,7 +80,7 @@ mariadb -u root -p -e "SET GLOBAL event_scheduler = ON"
 
 ```sh
 cp src/main/resources/application.properties.example src/main/resources/application.properties
-# edit the credentials (or set DB_USER / DB_PASSWORD environment variables)
+
 mvn spring-boot:run          # http://localhost:8080
 ```
 
@@ -95,8 +91,7 @@ alter it.
 ### 3. Tests and dashboard
 
 ```sh
-./test.sh                                    # 94 end-to-end checks (needs curl and jq)
-cd dashboard && npm install && npm run dev   # vendor dashboard on http://localhost:5173
+./test.sh
 ```
 
 ---
@@ -469,8 +464,7 @@ POST /api/customers
 
 ## Database features
 
-Everything in this section is created by one script, [`db/vendor_api.sql`](db/vendor_api.sql). It uses
-only the SQL taught in the course slides, plus `SIGNAL` in two triggers. Some features work behind
+Everything in this section is created by one script, [`db/vendor_api.sql`](db/vendor_api.sql). Some features work behind
 the CRUD endpoints (indexes, triggers, the order transaction, users). Others are for direct SQL and
 reporting (views, the stored procedure, the event).
 
@@ -506,7 +500,7 @@ Sample data: 100 000 customers and addresses, 200 000 orders, ~1.1 million order
 
 ### Indexes
 
-Primary keys and foreign keys are indexed automatically (InnoDB). The added indexes are for fields
+The added indexes are for fields
 that the API's repeated queries use in `WHERE` (search conditions) and `ORDER BY` (sorting):
 
 | Index | Columns | Query it serves |
@@ -532,7 +526,6 @@ Check the query plan with `EXPLAIN`. The `key` column shows the index used:
 
 ```sql
 EXPLAIN SELECT * FROM orders WHERE status = 'NEW' ORDER BY order_date DESC;
--- key: idx_orders_status_date
 ```
 
 ### Triggers
@@ -583,9 +576,9 @@ isolation level is MariaDB's default `REPEATABLE READ`.
 CREATE PROCEDURE cancel_order (IN p_order_id INT)
 BEGIN
     START TRANSACTION;
-    SELECT id, status FROM orders WHERE id = p_order_id FOR UPDATE;   -- write lock on the order
+    SELECT id, status FROM orders WHERE id = p_order_id FOR UPDATE;
     UPDATE orders SET status = 'CANCELLED'
-    WHERE id = p_order_id AND status = 'NEW';                        -- triggers: restock + log
+    WHERE id = p_order_id AND status = 'NEW';
     COMMIT;
 END
 ```
@@ -617,7 +610,7 @@ the base tables ([Security](#security)).
 ```sql
 SELECT * FROM product_catalog WHERE supplier_name = 'Polar Electronics Oy';
 SELECT * FROM order_summary WHERE customer_id = 1 ORDER BY order_date DESC;
-SELECT * FROM product_sales ORDER BY units_sold DESC;   -- best sellers
+SELECT * FROM product_sales ORDER BY units_sold DESC;
 ```
 
 ### Order status history
