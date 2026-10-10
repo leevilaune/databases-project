@@ -93,7 +93,10 @@ alter it.
 
 ```sh
 ./test.sh
+
+mvn test
 ```
+
 
 ---
 
